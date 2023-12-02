@@ -48,6 +48,21 @@ const lineToGame = (line: string): Game => {
   };
 };
 
+const requiredCubesToPlayGame = (game: Game) => {
+  const requiredColor = (color: ColorName) =>
+    Math.max(...game.matches.map((x) => x[color]));
+  return {
+    red: requiredColor("red"),
+    green: requiredColor("green"),
+    blue: requiredColor("blue"),
+  };
+};
+
+const gamePower = (game: Game): number => {
+  const requiredColors = requiredCubesToPlayGame(game);
+  return requiredColors.red * requiredColors.green * requiredColors.blue;
+};
+
 const isMatchPossible = (match: Match) =>
   match.red <= 12 && match.green <= 13 && match.blue <= 14;
 
@@ -58,6 +73,6 @@ const input = fs.readFileSync("input.txt", "utf8");
 const result = input
   .split("\n")
   .map(lineToGame)
-  .reduce((acc, curr) => (acc += isGamePossible(curr) ? curr.index : 0), 0);
+  .reduce((acc, curr) => (acc += gamePower(curr)), 0);
 
 console.log(result);
