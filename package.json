@@ -5,11 +5,13 @@
     "four": "ts-node day-04.ts"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.202",
     "prettier": "^3.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.3.2"
   },
   "dependencies": {
-    "@types/node": "^20.10.2"
+    "@types/node": "^20.10.2",
+    "lodash": "^4.17.21"
   }
 }
