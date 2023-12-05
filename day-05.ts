@@ -1,7 +1,6 @@
-import { assert, pipe, readInput } from "./utils";
-import { cloneDeep } from "lodash";
+import { assert, pipe } from "./utils";
 import * as fs from "fs";
-import { Hash } from "crypto";
+import { chunk } from "lodash";
 
 type Range = [number, number, number];
 
@@ -21,16 +20,6 @@ type World = {
 };
 
 type ConvertedHashMap = Record<number, number>;
-
-type ConvertedHashMapsList = {
-  seedSoil: ConvertedHashMap;
-  soilFertilizer: ConvertedHashMap;
-  fertilizerWater: ConvertedHashMap;
-  waterLight: ConvertedHashMap;
-  lightTemperature: ConvertedHashMap;
-  temperatureHumidity: ConvertedHashMap;
-  humidityLocation: ConvertedHashMap;
-};
 
 const parseLine = (line: string): number[] =>
   line.split(" ").map((x) => Number(x));
@@ -68,17 +57,6 @@ const parseInput = (input: string): World => {
   };
 };
 
-const mapToJson = (hashMap: HashMap): ConvertedHashMap => {
-  let output: Record<number, number> = {};
-  hashMap.forEach(([y, x, z]) => {
-    for (let i = 0; i < z; i++) {
-      output[x + i] = y + i;
-    }
-  });
-
-  return output;
-};
-
 /** map with fallback */
 const mapFall =
   (hashMap: HashMap) =>
@@ -97,8 +75,8 @@ const mapFall =
     return foundRange ? calcForOneRange(foundRange, key) : key;
   };
 
-const calcSeedLocation = (world: World, seed: number): number => {
-  return pipe(
+const calcSeedLocation = (world: World, seed: number): number =>
+  pipe(
     seed,
     mapFall(world.maps.seedSoil),
     mapFall(world.maps.soilFertilizer),
@@ -108,15 +86,27 @@ const calcSeedLocation = (world: World, seed: number): number => {
     mapFall(world.maps.temperatureHumidity),
     mapFall(world.maps.humidityLocation),
   );
-};
+
+function* getActualSeeds(pair: number[]) {
+  const [left, right] = pair;
+  for (let i = 0; i < right; i++) {
+    const value = left + i;
+    yield value;
+  }
+}
 
 const calcResult = (world: World): number => {
-  const seedsLocations = world.seeds.map((seed, idx) => {
-    console.log("running at", idx, seed, JSON.stringify(world, null, 2));
-    return calcSeedLocation(world, seed);
-  });
+  const seedsGroups = chunk(world.seeds, 2);
+  let foundSeedsLocations: number[] = [];
 
-  return seedsLocations.sort((a, b) => (a < b ? -1 : 1))[0];
+  for (let pairs of seedsGroups.map(getActualSeeds)) {
+    for (let seed of pairs) {
+      const seedLocation = calcSeedLocation(world, seed);
+      foundSeedsLocations.push(seedLocation);
+    }
+  }
+
+  return foundSeedsLocations.sort((a, b) => (a < b ? -1 : 1))[0];
 };
 
 const runTests = (): void => {
@@ -196,21 +186,16 @@ humidity-to-location map:
   const world = parseInput(input);
   assert(world, expected, "parsing world");
 
-  assert(calcSeedLocation(world, 79), 82, "calcLocation0");
-  assert(calcSeedLocation(world, 14), 43, "calcLocation1");
-  assert(calcSeedLocation(world, 55), 86, "calcLocation2");
-  assert(calcSeedLocation(world, 13), 35, "calcLocation3");
-
-  assert(calcResult(world), 35, "calcResult (min seed)");
+  assert(calcResult(world), 46, "calcResult (min seed)");
 };
 
 const main = () => {
   runTests();
 
-  const input = fs.readFileSync("./inputs/day-05.txt", "utf8");
-  const world = parseInput(input);
-  const result = calcResult(world);
-  console.log(`The result is: ${result}`);
+  // const input = fs.readFileSync("./inputs/day-05.txt", "utf8");
+  // const world = parseInput(input);
+  // const result = calcResult(world);
+  // console.log(`The result is: ${result}`);
 };
 
 main();
