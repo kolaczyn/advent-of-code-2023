@@ -2,7 +2,8 @@
   "scripts": {
     "start": "ts-node main.ts",
     "three": "ts-node day-03.ts",
-    "four": "ts-node day-04.ts"
+    "four": "ts-node day-04.ts",
+    "five": "ts-node day-05.ts"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.202",
