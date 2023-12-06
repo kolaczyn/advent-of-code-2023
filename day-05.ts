@@ -57,23 +57,36 @@ const parseInput = (input: string): World => {
   };
 };
 
+const isInRange = (range: Range, value: number) => {
+  const [_, input, len] = range;
+  return value >= input && value <= input + len;
+};
+
+const calcForOneRange = (range: Range, value: number) => {
+  const [output, input, len] = range;
+  return value - input + output;
+};
+
 /** map with fallback */
 const mapFall =
   (hashMap: HashMap) =>
   (key: number): number => {
-    const isInRange = (range: Range, value: number) => {
-      const [output, input, len] = range;
-      return value >= input && value <= input + len;
-    };
-
-    const calcForOneRange = (range: Range, value: number) => {
-      const [output, input, len] = range;
-      return value - input + output;
-    };
-
     const foundRange = hashMap.find((x) => isInRange(x, key));
     return foundRange ? calcForOneRange(foundRange, key) : key;
   };
+
+type PurgeSeedsReturn = {
+  identities: Range;
+  needsCalculation: Range;
+};
+
+// /** culls a lot of seeds in the first map which are identities */
+// const purgeSeeds = (
+//   world: World,
+//   [left, right]: [number, number],
+// ): PurgeSeedsReturn => {
+//   if ()
+// };
 
 const calcSeedLocation = (world: World, seed: number): number =>
   pipe(
@@ -102,6 +115,7 @@ const calcResult = (world: World): number => {
   for (let pairs of seedsGroups.map(getActualSeeds)) {
     for (let seed of pairs) {
       const seedLocation = calcSeedLocation(world, seed);
+      console.log(seed, "->", seedLocation);
       foundSeedsLocations.push(seedLocation);
     }
   }
@@ -192,10 +206,16 @@ humidity-to-location map:
 const main = () => {
   runTests();
 
-  // const input = fs.readFileSync("./inputs/day-05.txt", "utf8");
-  // const world = parseInput(input);
-  // const result = calcResult(world);
-  // console.log(`The result is: ${result}`);
+  const run = true;
+
+  if (!run) {
+    return;
+  }
+
+  const input = fs.readFileSync("./inputs/day-05.txt", "utf8");
+  const world = parseInput(input);
+  const result = calcResult(world);
+  console.log(`The result is: ${result}`);
 };
 
 main();
