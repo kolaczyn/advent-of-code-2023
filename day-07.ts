@@ -1,20 +1,37 @@
 import { assert, readInput } from "./utils";
 import * as fs from "fs";
+import { cloneDeep } from "lodash";
+
+/** "all", except the Joker */
+const jokerReplacements: Card[] = [
+  "A",
+  "K",
+  "Q",
+  "T",
+  "9",
+  "8",
+  "7",
+  "6",
+  "5",
+  "4",
+  "3",
+  "2",
+];
 
 const cardScores: Record<Card, number> = {
-  A: 12,
-  K: 11,
-  Q: 10,
-  J: 9,
-  T: 8,
-  "9": 7,
-  "8": 6,
-  "7": 5,
-  "6": 4,
-  "5": 3,
-  "4": 2,
-  "3": 1,
-  "2": 0,
+  A: 14,
+  K: 13,
+  Q: 12,
+  J: 11,
+  T: 10,
+  "9": 9,
+  "8": 8,
+  "7": 7,
+  "6": 6,
+  "5": 5,
+  "4": 4,
+  "3": 3,
+  "2": 2,
 };
 
 const handScores: Record<HandType, number> = {
@@ -63,7 +80,15 @@ type HandType =
 /** there are five cards in a hand */
 const CARD_IN_HAND = 5;
 
-const organizeHand = (hand: Hand): { card: Card; num: number }[] => {
+type CardNum = { card: Card; num: number };
+
+type OrganizedHand = {
+  organized: CardNum[];
+  organizedNoJoker: CardNum[];
+  jokers: number;
+};
+
+const organizeHand = (hand: Hand): OrganizedHand => {
   let mapOfCards = {} as Record<Card, number>;
 
   for (let x of hand) {
@@ -73,26 +98,36 @@ const organizeHand = (hand: Hand): { card: Card; num: number }[] => {
       mapOfCards[x] = 1;
     }
   }
-  return Object.entries(mapOfCards)
+  const organized = Object.entries(mapOfCards)
     .map(([key, value]) => ({
       card: key as Card,
       num: value,
     }))
     .toSorted((a, b) => (a.num < b.num ? 1 : -1));
+
+  const organizedNoJoker = organized.filter((x) => x.card !== "J");
+
+  return {
+    organized,
+    jokers: mapOfCards["J"] ?? 0,
+    organizedNoJoker,
+  };
 };
 
+const printHand = (hand: Hand): string => JSON.stringify(hand, null, 2);
+
 const isFiveOfKind = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized, jokers, organizedNoJoker } = organizeHand(hand);
   return organized.length === 1;
 };
 
 const isFourOfKind = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized, jokers, organizedNoJoker } = organizeHand(hand);
   return organized.length === 2 && organized[0].num === 4;
 };
 
 const isThreeOfAKind = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized, jokers, organizedNoJoker } = organizeHand(hand);
   return (
     organized.length === 3 &&
     organized[0].num === 3 &&
@@ -102,14 +137,14 @@ const isThreeOfAKind = (hand: Hand): boolean => {
 };
 
 const isFullHouse = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized, jokers, organizedNoJoker } = organizeHand(hand);
   return (
     organized.length === 2 && organized[0].num === 3 && organized[1].num === 2
   );
 };
 
 const isTwoPair = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized, organizedNoJoker, jokers } = organizeHand(hand);
   return (
     organized.length === 3 &&
     organized[0].num === 2 &&
@@ -119,7 +154,7 @@ const isTwoPair = (hand: Hand): boolean => {
 };
 
 const isOnePair = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized, jokers, organizedNoJoker } = organizeHand(hand);
   return (
     organized.length === 4 &&
     organized[0].num === 2 &&
@@ -130,7 +165,7 @@ const isOnePair = (hand: Hand): boolean => {
 };
 
 const isHighCard = (hand: Hand): boolean => {
-  const organized = organizeHand(hand);
+  const { organized } = organizeHand(hand);
   return organized.length === 5;
 };
 
@@ -156,7 +191,35 @@ const handToType = (hand: Hand): HandType => {
   if (isOnePair(hand)) return "onePair";
   if (isHighCard(hand)) return "highCard";
   // I think this should never happen
-  throw new Error(`Invalid hand: ${JSON.stringify(hand, null, 2)}`);
+  throw new Error(`Invalid hand: ${printHand(hand)}`);
+};
+
+/** despite its name, it does not mutate the array */
+const replaceItemAtIndex = <TItem>(
+  arr: TItem[],
+  idx: number,
+  value: TItem,
+): TItem[] => {
+  const newArr = cloneDeep(arr);
+  newArr[idx] = value;
+  return newArr;
+};
+
+const determineStrongestPossibleHand = (hand: Hand): Hand => {
+  const isWithJokers = hand.includes("J");
+  if (!isWithJokers) return hand;
+
+  let strongest = {
+    score: -1,
+    hand: null,
+  };
+  for (let i = 0; i < hand.length; i++) {
+    if (hand[i] === "J") {
+      const withoutJoker = replaceItemAtIndex(hand, i, "2");
+    }
+  }
+  // TODO
+  throw new Error("Not implemented");
 };
 
 const compareHands = (left: Hand, right: Hand): 1 | 0 | -1 => {
