@@ -4,7 +4,8 @@
     "three": "ts-node day-03.ts",
     "four": "ts-node day-04.ts",
     "five": "ts-node day-05.ts",
-    "six": "ts-node day-06.ts"
+    "six": "ts-node day-06.ts",
+    "seven": "ts-node day-07.ts"
 
   },
   "devDependencies": {
