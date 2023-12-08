@@ -7,11 +7,7 @@ export const readInput = (day: `day-${number}${number}.txt`): string[] => {
 
 export const fmt = (value: unknown): string => JSON.stringify(value, null, 2);
 
-export const assert = (
-  value: unknown,
-  expected: unknown,
-  label?: string,
-): void => {
+export const assert = <T>(value: T, expected: T, label?: string): void => {
   if (JSON.stringify(value) !== JSON.stringify(expected)) {
     throw new Error(`Expected:\n${fmt(expected)}\n----\nGot: ${fmt(value)}`);
   }
