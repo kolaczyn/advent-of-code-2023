@@ -41,7 +41,7 @@ const calculateNextValue = (line: Line): number => {
   let currDifference: number = 0;
 
   for (let idx = 1; idx < allLines.length; idx++) {
-    currDifference = allLines[idx].at(-1)! + currDifference;
+    currDifference = allLines[idx].at(0)! - currDifference;
   }
 
   return currDifference;
@@ -58,7 +58,7 @@ const runTests = () => {
 1 3 6 10 15 21
 10 13 16 21 30 45`;
 
-  assert(calculateResult(input), 114);
+  assert(calculateResult(input), 2);
 };
 
 const main = () => {
