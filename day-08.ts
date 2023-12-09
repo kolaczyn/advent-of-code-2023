@@ -1,4 +1,4 @@
-import { assert, readInput } from "./utils";
+import { assert } from "./utils";
 import * as fs from "fs";
 
 type NoteName = string;
@@ -11,11 +11,12 @@ type Note = {
   name: NoteName;
   left: NoteName;
   right: NoteName;
+  isEnd: boolean;
 };
 
 type World = {
   directions: DirectionsList;
-  notes: Note[];
+  notes: Record<string, Note>;
 };
 
 const parseLine = (line: string): Note => {
@@ -29,6 +30,7 @@ const parseLine = (line: string): Note => {
     name: nameStr,
     left,
     right,
+    isEnd: isEndingNote({ name: nameStr }),
   };
 };
 
@@ -37,9 +39,16 @@ const parseHeader = (line: string): DirectionsList =>
 
 const parseInput = (input: string): World => {
   const [header, lines] = input.split("\n\n");
+  const notesArr = lines.split("\n").map(parseLine);
+
+  const notesMap: Record<string, Note> = {};
+  notesArr.forEach((x) => {
+    notesMap[x.name] = x;
+  });
+
   return {
     directions: parseHeader(header),
-    notes: lines.split("\n").map(parseLine),
+    notes: notesMap,
   };
 };
 
@@ -52,7 +61,7 @@ function* getNextDirection(directions: DirectionsList) {
 }
 
 const getNoteAt = (world: World, noteName: string): Note => {
-  const note = world.notes.find((x) => x.name === noteName)!;
+  const note = world.notes[noteName];
   if (note == null) {
     throw new Error(`Note could not be found. ${noteName}`);
   }
@@ -62,19 +71,25 @@ const getNoteAt = (world: World, noteName: string): Note => {
 const START_NOTE_NAME = "AAA";
 const END_NOTE_NAME = "ZZZ";
 
-const findStart = (world: World): Note =>
-  world.notes.find((x) => x.name === START_NOTE_NAME)!;
+const isStartingNote = (note: Note): boolean => note.name.endsWith("A");
+const isEndingNote = (note: { name: string }): boolean =>
+  note.name.endsWith("Z");
+
+const findStartingNotes = (world: World): Note[] =>
+  Object.values(world.notes).filter(isStartingNote);
 
 const traverse = (world: World): number => {
   let stepsTaken = 0;
-  let current = findStart(world);
+  let current = findStartingNotes(world);
 
   for (let direction of getNextDirection(world.directions)) {
-    const nextDestination = direction === "L" ? current.left : current.right;
+    current = current.map((x): Note => {
+      const nextDestination = direction === "L" ? x.left : x.right;
+      return getNoteAt(world, nextDestination);
+    });
     stepsTaken++;
 
-    current = getNoteAt(world, nextDestination);
-    const isAtDestination = current.name === END_NOTE_NAME;
+    const isAtDestination = current.every((x) => x.isEnd);
 
     if (isAtDestination) {
       break;
@@ -92,48 +107,29 @@ const calcResult = (input: string): number => {
 const runTests = () => {
   {
     const input = `\
-RL
+LR
 
-AAA = (BBB, CCC)
-BBB = (DDD, EEE)
-CCC = (ZZZ, GGG)
-DDD = (DDD, DDD)
-EEE = (EEE, EEE)
-GGG = (GGG, GGG)
-ZZZ = (ZZZ, ZZZ)\
-`;
-
-    assert(calcResult(input), 2);
-  }
-  {
-    const input = `\
-LLR
-
-AAA = (BBB, BBB)
-BBB = (AAA, ZZZ)
-ZZZ = (ZZZ, ZZZ)\
-`;
-
-    assert(calcResult(input), 6);
-  }
-  {
-    const input = `\
-LLR
-
-BBB = (AAA, ZZZ)
-AAA = (BBB, BBB)
-ZZZ = (ZZZ, ZZZ)\
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)\
 `;
 
     assert(calcResult(input), 6);
   }
 };
 
+const readInput = (): string => fs.readFileSync(`./inputs/day-08.txt`, "utf8");
+
 const main = () => {
-  const input = fs.readFileSync(`./inputs/day-08.txt`, "utf8");
+  const input = readInput();
   const result = calcResult(input);
   console.log("Result:", result);
 };
 
-main();
 runTests();
+main();
