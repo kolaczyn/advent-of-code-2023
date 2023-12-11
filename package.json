@@ -8,7 +8,8 @@
     "seven": "ts-node day-07.ts",
     "eight": "ts-node day-08.ts",
     "nine": "ts-node day-09.ts",
-    "ten": "ts-node day-10.ts"
+    "ten": "ts-node day-10.ts",
+    "eleven": "ts-node day-11.ts"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.202",
