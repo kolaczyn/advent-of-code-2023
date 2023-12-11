@@ -1,7 +1,12 @@
 import { assert, pipe } from "./utils";
+import { deepStrictEqual } from "assert";
+import { readFileSync } from "fs";
 
+type Location = [number, number];
 type Point = "#" | ".";
 type World = Point[][];
+
+type GalaxiesLocations = Set<Location>;
 
 const parseInput = (input: string): World =>
   input.split("\n").map((x) => x.split("") as Point[]);
@@ -16,29 +21,7 @@ const navigateWorld = (
     }
 };
 
-const toInvertedWorld = (world: World) => {
-  let out = world.map((x) => new Array(x.length));
-
-  navigateWorld(world, (x, y, value) => {
-    out[y][x] = value;
-  });
-  return out;
-};
-
-const findEmptyRows = (world: World): number[] => {
-  let output = new Set<number>();
-  world[0].forEach((_, idx) => output.add(idx));
-
-  navigateWorld(world, (x, y, value) => {
-    if (value === "#") {
-      output.delete(y);
-    }
-  });
-
-  return Array.from(output);
-};
-
-const findEmptyColumnsAndRows = (world: World) => {
+const findEmptyRowsColumns = (world: World) => {
   let columns = new Set<number>();
   world.forEach((_, idx) => columns.add(idx));
 
@@ -53,13 +36,67 @@ const findEmptyColumnsAndRows = (world: World) => {
   });
 
   return {
-    rows: Array.from(rows),
-    columns: Array.from(columns),
+    emptyRows: Array.from(rows),
+    emptyColumns: Array.from(columns),
   };
 };
 
-const expandUniverse = (world: World): World => {
-  return null!;
+const findGalaxies = (world: World): GalaxiesLocations => {
+  let galaxiesLocation: GalaxiesLocations = new Set<Location>();
+  navigateWorld(world, (x, y, value) => {
+    if (value === "#") {
+      const location: Location = [x, y];
+      galaxiesLocation.add(location);
+    }
+  });
+  return galaxiesLocation;
+};
+
+const navigateThroughGalaxyPairs = (
+  galaxiesLocation: GalaxiesLocations,
+  callback: (left: Location, right: Location) => void,
+) => {
+  const arr = Array.from(galaxiesLocation);
+  for (let i = 0; i < arr.length; i++)
+    for (let j = i; j < arr.length; j++) {
+      if (i !== j) callback(arr[i], arr[j]);
+    }
+};
+
+const countDistances = (world: World, multiplier: number): number[] => {
+  const galaxies = findGalaxies(world);
+  const { emptyRows, emptyColumns } = findEmptyRowsColumns(world);
+  let distances: number[] = [];
+  navigateThroughGalaxyPairs(galaxies, (left, right) => {
+    const lowerHor = Math.min(left[0], right[0]);
+    const upperHor = Math.max(left[0], right[0]);
+    const lowerVer = Math.min(left[1], right[1]);
+    const upperVer = Math.max(left[1], right[1]);
+
+    let extendedRows = emptyRows.filter(
+      (y) => y > lowerVer && y < upperVer,
+    ).length;
+    let extendedCols = emptyColumns.filter(
+      (x) => x > lowerHor && x < upperHor,
+    ).length;
+
+    const regularSize = upperHor - lowerHor + upperVer - lowerVer;
+    const result =
+      regularSize +
+      extendedRows * (multiplier - 1) +
+      extendedCols * (multiplier - 1);
+
+    return distances.push(result);
+  });
+
+  return distances;
+};
+
+const add = (accumulator: number, a: number) => accumulator + a;
+
+const calculateResult = (input: string, multiplier: number): number => {
+  const world = parseInput(input);
+  return countDistances(world, multiplier).reduce(add, 0);
 };
 
 const runTests = () => {
@@ -92,12 +129,23 @@ const runTests = () => {
 `;
 
     const world = parseInput(input);
-    assert(findEmptyColumnsAndRows(world).columns, [2, 5, 8]);
-    assert(findEmptyColumnsAndRows(world).rows, [3, 7]);
+    assert(findEmptyRowsColumns(world).emptyColumns, [2, 5, 8]);
+    assert(findEmptyRowsColumns(world).emptyRows, [3, 7]);
+    {
+      let count = 0;
+      navigateThroughGalaxyPairs(findGalaxies(world), () => count++);
+      assert(count, 36);
+    }
+
+    assert(calculateResult(input, 10), 1030);
+    assert(calculateResult(input, 100), 8410);
   }
 };
 
-const main = () => {};
+const main = () => {
+  const input = readFileSync("./inputs/day-11.txt", "utf-8");
+  console.log("The result is", calculateResult(input, 1_000_000));
+};
 
 runTests();
 main();
