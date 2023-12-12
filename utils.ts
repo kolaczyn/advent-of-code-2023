@@ -11,7 +11,7 @@ export const assert = <T>(value: T, expected: T, label?: string): void => {
   if (JSON.stringify(value) !== JSON.stringify(expected)) {
     throw new Error(`Expected:\n${fmt(expected)}\n----\nGot: ${fmt(value)}`);
   }
-  console.info("Test passed", label ? `: ${label}` : "");
+  console.info(`Test passed${label ? `: ${label}` : ""}`);
 };
 
 type Pipe = <A, B, C, D, E, F, G, H, Z>(
